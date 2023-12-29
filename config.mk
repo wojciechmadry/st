@@ -1,5 +1,5 @@
 # st version
-VERSION = 0.9
+VERSION = 1.0
 
 # Customize below to fit your system
 
@@ -22,7 +22,7 @@ LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft \
 
 # flags
 STCPPFLAGS = -DVERSION=\"$(VERSION)\" -D_XOPEN_SOURCE=600
-STCFLAGS = $(INCS) $(STCPPFLAGS) $(CPPFLAGS) $(CFLAGS)
+STCFLAGS = $(INCS) $(STCPPFLAGS) -O3
 STLDFLAGS = $(LIBS) $(LDFLAGS)
 
 # OpenBSD:
