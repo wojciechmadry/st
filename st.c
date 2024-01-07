@@ -712,6 +712,7 @@ execsh(char *cmd, char **args)
 void
 sigchld(int a)
 {
+	(void)a;
 	int stat;
 	pid_t p;
 
@@ -901,7 +902,7 @@ ttywriteraw(const char *s, size_t n)
 			 */
 			if ((r = write(cmdfd, s, (n < lim)? n : lim)) < 0)
 				goto write_error;
-			if (r < n) {
+			if (r < (ssize_t)n) {
 				/*
 				 * We weren't able to write out everything.
 				 * This means the buffer is getting full
@@ -1019,7 +1020,7 @@ treset(void)
 	}, .x = 0, .y = 0, .state = CURSOR_DEFAULT};
 
 	memset(term.tabs, 0, term.col * sizeof(*term.tabs));
-	for (i = tabspaces; i < term.col; i += tabspaces)
+	for (i = tabspaces; i < (uint)term.col; i += tabspaces)
 		term.tabs[i] = 1;
 	term.top = 0;
 	term.bot = term.row - 1;
@@ -1858,7 +1859,7 @@ osc_color_response(int num, int index, int is_osc4)
 
 	n = snprintf(buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
 	             is_osc4 ? "4;" : "", num, r, r, g, g, b, b);
-	if (n < 0 || n >= sizeof(buf)) {
+	if (n < 0 || n >= (int)sizeof(buf)) {
 		fprintf(stderr, "error: %s while printing %s response\n",
 		        n < 0 ? "snprintf failed" : "truncation occurred",
 		        is_osc4 ? "osc4" : "osc");
@@ -1916,7 +1917,7 @@ strhandle(void)
 			if (narg < 2)
 				break;
 			p = strescseq.args[1];
-			if ((j = par - 10) < 0 || j >= LEN(osc_table))
+			if ((j = par - 10) < 0 || j >= (int)LEN(osc_table))
 				break; /* shouldn't be possible */
 
 			if (!strcmp(p, "?")) {
@@ -2029,6 +2030,7 @@ strreset(void)
 void
 sendbreak(const Arg *arg)
 {
+	(void)arg;
 	if (tcsendbreak(cmdfd, 0))
 		perror("Error sending break");
 }
@@ -2046,18 +2048,21 @@ tprinter(char *s, size_t len)
 void
 toggleprinter(const Arg *arg)
 {
+	(void)arg;
 	term.mode ^= MODE_PRINT;
 }
 
 void
 printscreen(const Arg *arg)
 {
+	(void)arg;
 	tdump();
 }
 
 void
 printsel(const Arg *arg)
 {
+	(void)arg;
 	tdumpsel();
 }
 
@@ -2102,15 +2107,15 @@ tputtab(int n)
 	uint x = term.c.x;
 
 	if (n > 0) {
-		while (x < term.col && n--)
-			for (++x; x < term.col && !term.tabs[x]; ++x)
+		while (x < (uint)term.col && n--)
+			for (++x; x < (uint)term.col && !term.tabs[x]; ++x)
 				/* nothing */ ;
 	} else if (n < 0) {
 		while (x > 0 && n++)
 			for (--x; x > 0 && !term.tabs[x]; --x)
 				/* nothing */ ;
 	}
-	term.c.x = LIMIT(x, 0, term.col-1);
+	term.c.x = LIMIT(x, 0, (uint)(term.col-1));
 }
 
 void
