@@ -830,6 +830,7 @@ ttyread(void)
 		exit(0);
 	case -1:
 		die("couldn't read from shell: %s\n", strerror(errno));
+		break;
 	default:
 		buflen += ret;
 		written = twrite(buf, buflen, 0);
@@ -839,6 +840,7 @@ ttyread(void)
 			memmove(buf, buf + written, buflen);
 		return ret;
 	}
+	return ret;
 }
 
 void
@@ -2366,7 +2368,7 @@ tputc(Rune u)
 {
 	char c[UTF_SIZ];
 	int control;
-	int width, len;
+	int width = 0, len = 0;
 	Glyph *gp;
 
 	control = ISCONTROL(u);
