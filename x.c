@@ -4,6 +4,8 @@
 #include <limits.h>
 #include <locale.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/select.h>
 #include <time.h>
 #include <unistd.h>
@@ -14,6 +16,7 @@
 #include <X11/keysym.h>
 #include <X11/Xft/Xft.h>
 #include <X11/XKBlib.h>
+#include <X11/Xresource.h>
 
 char *argv0;
 #include "arg.h"
@@ -241,7 +244,6 @@ static int frclen = 0;
 static int frccap = 0;
 static char *usedfont = NULL;
 static double usedfontsize = 0;
-static double defaultfontsize = 0;
 
 static char *opt_class = NULL;
 static char **opt_cmd  = NULL;
@@ -981,6 +983,28 @@ xloadfont(Font *f, FcPattern *pattern)
 	return 0;
 }
 
+double xgetdpi()
+{
+	double dpi = 1.0;
+	XrmInitialize();
+	char* resourceManager = XResourceManagerString(xw.dpy);
+	if (resourceManager == NULL)
+		return dpi;
+
+	XrmDatabase db = XrmGetStringDatabase(resourceManager);
+	if (db == NULL)
+		return dpi;
+
+	XrmValue ret;
+	char* type;
+	XrmGetResource(db, "Xft.dpi", "String", &type, &ret);      \
+	if (ret.addr != NULL && !strncmp("String", type, 64)) {
+		dpi = strtod(ret.addr, NULL) / 100.0;
+	}
+	XrmDestroyDatabase(db);
+	return dpi;
+}
+
 void
 xloadfonts(const char *fontstr, double fontsize)
 {
@@ -994,7 +1018,7 @@ xloadfonts(const char *fontstr, double fontsize)
 
 	if (!pattern)
 		die("can't open font %s\n", fontstr);
-
+	fontsize = fontsize * xgetdpi();
 	if (fontsize > 1) {
 		FcPatternDel(pattern, FC_PIXEL_SIZE);
 		FcPatternDel(pattern, FC_SIZE);
@@ -1146,7 +1170,7 @@ xinit(int cols, int rows)
 		die("could not init fontconfig.\n");
 
 	usedfont = (opt_font == NULL)? font : opt_font;
-	xloadfonts(usedfont, 0);
+	xloadfonts(usedfont, defaultfontsize);
 
 	/* colors */
 	xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
