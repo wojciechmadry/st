@@ -23,7 +23,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt -y install gcc make
+        sudo apt -y install gcc make pkg-config libx11-dev libfreetype-dev libfontconfig1-dev libxft-dev
 
     - name: Build
       run: |
