@@ -159,6 +159,7 @@ static void xresize(int, int);
 static void xhints(void);
 static int xloadcolor(int, const char *, Color *);
 static int xloadfont(Font *, FcPattern *);
+static double xgetdpi();
 static void xloadfonts(const char *, double);
 static void xunloadfont(Font *);
 static void xunloadfonts(void);
@@ -324,7 +325,7 @@ zoomreset(const Arg *arg)
 	Arg larg;
 
 	if (defaultfontsize > 0) {
-		larg.f = defaultfontsize;
+		larg.f = defaultfontsize * xgetdpi();
 		zoomabs(&larg);
 	}
 }
@@ -1024,7 +1025,6 @@ xloadfonts(const char *fontstr, double fontsize)
 
 	if (!pattern)
 		die("can't open font %s\n", fontstr);
-	fontsize = fontsize * xgetdpi();
 	if (fontsize > 1) {
 		FcPatternDel(pattern, FC_PIXEL_SIZE);
 		FcPatternDel(pattern, FC_SIZE);
@@ -1185,7 +1185,7 @@ xinit(int cols, int rows)
 		die("could not init fontconfig.\n");
 
 	usedfont = (opt_font == NULL)? font : opt_font;
-	xloadfonts(usedfont, defaultfontsize);
+	xloadfonts(usedfont, defaultfontsize * xgetdpi());
 
 	/* colors */
 	xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
