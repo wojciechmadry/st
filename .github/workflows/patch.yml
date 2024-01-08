@@ -22,13 +22,12 @@ jobs:
         sudo apt -y install git
 
     - name: Clone st
-      working-directory: ./ws
       run: |
         git clone https://git.suckless.org/st
 
     - name: Generate patch
-      working-directory: ./ws/st
       run: |
+        cd st
         git remote add -f b https://github.com/wojciechmadry/st.git
         git remote update
         git diff master remotes/b/master > wojciechmadry.patch
@@ -37,4 +36,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: wojciechmadry.patch
-        path: ./ws/st/wojciechmadry.patch
+        path: st/wojciechmadry.patch
