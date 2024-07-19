@@ -5,7 +5,8 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
+static char *font = "JetBrains Mono Nerd Font:style=Medium:antialias=true:autohint=true";
+static double defaultfontsize = 14;
 static int borderpx = 2;
 
 /*
@@ -95,35 +96,28 @@ unsigned int tabspaces = 8;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-	/* 8 normal colors */
-	"black",
-	"red3",
-	"green3",
-	"yellow3",
-	"blue2",
-	"magenta3",
-	"cyan3",
-	"gray90",
+	[0] = "#32302f", /* hard contrast: #1d2021 / soft contrast: #32302f */
+	[1] = "#cc241d", /* red     */
+	[2] = "#98971a", /* green   */
+	[3] = "#d79921", /* yellow  */
+	[4] = "#458588", /* blue    */
+	[5] = "#b16286", /* magenta */
+	[6] = "#689d6a", /* cyan    */
+	[7] = "#a89984", /* white   */
 
-	/* 8 bright colors */
-	"gray50",
-	"red",
-	"green",
-	"yellow",
-	"#5c5cff",
-	"magenta",
-	"cyan",
-	"white",
-
-	[255] = 0,
-
-	/* more colors can be added after 255 to use with DefaultXX */
-	"#cccccc",
+	[8]  = "#928374", /* black   */
+	[9]  = "#fb4934", /* red     */
+	[10] = "#9DBA25", /* green   */
+	[11] = "#fabd2f", /* yellow  */
+	[12] = "#4064B7", /* blue    */
+	[13] = "#d3869b", /* magenta */
+	[14] = "#8ec07c", /* cyan    */
+	[15] = "#ebdbb2", /* white   */
+	[256]="#cccccc",
 	"#555555",
 	"gray90", /* default foreground colour */
-	"black", /* default background colour */
+	"#181818", /* default background colour */
 };
-
 
 /*
  * Default colors (colorname index)
@@ -177,10 +171,10 @@ static uint forcemousemod = ShiftMask;
 static MouseShortcut mshortcuts[] = {
 	/* mask                 button   function        argument       release */
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
-	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
-	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
-	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
-	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
+	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"}, 0 },
+	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0 },
+	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"}, 0 },
+	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"}, 0 },
 };
 
 /* Internal keyboard shortcuts. */
@@ -348,7 +342,7 @@ static Key key[] = {
 	{ XK_Delete,        ShiftMask,      "\033[3;2~",    +1,    0},
 	{ XK_Delete,        XK_ANY_MOD,     "\033[P",       -1,    0},
 	{ XK_Delete,        XK_ANY_MOD,     "\033[3~",      +1,    0},
-	{ XK_BackSpace,     XK_NO_MOD,      "\177",          0,    0},
+	{ XK_BackSpace,     XK_ANY_MOD,      "\177",         0,    0},
 	{ XK_BackSpace,     Mod1Mask,       "\033\177",      0,    0},
 	{ XK_Home,          ShiftMask,      "\033[2J",       0,   -1},
 	{ XK_Home,          ShiftMask,      "\033[1;2H",     0,   +1},
@@ -360,11 +354,7 @@ static Key key[] = {
 	{ XK_End,           ShiftMask,      "\033[1;2F",    +1,    0},
 	{ XK_End,           XK_ANY_MOD,     "\033[4~",       0,    0},
 	{ XK_Prior,         ControlMask,    "\033[5;5~",     0,    0},
-	{ XK_Prior,         ShiftMask,      "\033[5;2~",     0,    0},
-	{ XK_Prior,         XK_ANY_MOD,     "\033[5~",       0,    0},
 	{ XK_Next,          ControlMask,    "\033[6;5~",     0,    0},
-	{ XK_Next,          ShiftMask,      "\033[6;2~",     0,    0},
-	{ XK_Next,          XK_ANY_MOD,     "\033[6~",       0,    0},
 	{ XK_F1,            XK_NO_MOD,      "\033OP" ,       0,    0},
 	{ XK_F1, /* F13 */  ShiftMask,      "\033[1;2P",     0,    0},
 	{ XK_F1, /* F25 */  ControlMask,    "\033[1;5P",     0,    0},
