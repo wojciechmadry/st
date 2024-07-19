@@ -5,7 +5,8 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
+static char *font = "JetBrains Mono Nerd Font:style=Medium:antialias=true:autohint=true";
+static double defaultfontsize = 14;
 static int borderpx = 2;
 
 /*
@@ -95,35 +96,27 @@ unsigned int tabspaces = 8;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-	/* 8 normal colors */
-	"black",
-	"red3",
-	"green3",
-	"yellow3",
-	"blue2",
-	"magenta3",
-	"cyan3",
-	"gray90",
-
-	/* 8 bright colors */
-	"gray50",
-	"red",
-	"green",
-	"yellow",
-	"#5c5cff",
-	"magenta",
-	"cyan",
-	"white",
-
-	[255] = 0,
-
-	/* more colors can be added after 255 to use with DefaultXX */
-	"#cccccc",
+	"#1d1f21",
+	"#cc6666",
+	"#b5bd68",
+	"#f0c674",
+	"#81a2be",
+	"#b294bb",
+	"#8abeb7",
+	"#c5c8c6",
+	"#666666",
+	"#d54e53",
+	"#b9ca4a",
+	"#e7c547",
+	"#7aa6da",
+	"#c397d8",
+	"#70c0b1",
+	"#eaeaea",
+	[256]="#cccccc",
 	"#555555",
 	"gray90", /* default foreground colour */
 	"black", /* default background colour */
 };
-
 
 /*
  * Default colors (colorname index)
@@ -177,10 +170,10 @@ static uint forcemousemod = ShiftMask;
 static MouseShortcut mshortcuts[] = {
 	/* mask                 button   function        argument       release */
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
-	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
-	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
-	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
-	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
+	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"}, 0 },
+	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0 },
+	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"}, 0 },
+	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"}, 0 },
 };
 
 /* Internal keyboard shortcuts. */
@@ -348,7 +341,7 @@ static Key key[] = {
 	{ XK_Delete,        ShiftMask,      "\033[3;2~",    +1,    0},
 	{ XK_Delete,        XK_ANY_MOD,     "\033[P",       -1,    0},
 	{ XK_Delete,        XK_ANY_MOD,     "\033[3~",      +1,    0},
-	{ XK_BackSpace,     XK_NO_MOD,      "\177",          0,    0},
+	{ XK_BackSpace,     XK_ANY_MOD,      "\177",         0,    0},
 	{ XK_BackSpace,     Mod1Mask,       "\033\177",      0,    0},
 	{ XK_Home,          ShiftMask,      "\033[2J",       0,   -1},
 	{ XK_Home,          ShiftMask,      "\033[1;2H",     0,   +1},
