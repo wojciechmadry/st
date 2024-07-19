@@ -4,6 +4,8 @@
 #include <limits.h>
 #include <locale.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/select.h>
 #include <time.h>
 #include <unistd.h>
@@ -14,6 +16,7 @@
 #include <X11/keysym.h>
 #include <X11/Xft/Xft.h>
 #include <X11/XKBlib.h>
+#include <X11/Xresource.h>
 
 char *argv0;
 #include "arg.h"
@@ -156,6 +159,7 @@ static void xresize(int, int);
 static void xhints(void);
 static int xloadcolor(int, const char *, Color *);
 static int xloadfont(Font *, FcPattern *);
+static double xgetdpi();
 static void xloadfonts(const char *, double);
 static void xunloadfont(Font *);
 static void xunloadfonts(void);
@@ -178,7 +182,7 @@ static void bpress(XEvent *);
 static void bmotion(XEvent *);
 static void propnotify(XEvent *);
 static void selnotify(XEvent *);
-static void selclear_(XEvent *);
+__attribute__((unused)) static void selclear_(XEvent *);
 static void selrequest(XEvent *);
 static void setsel(char *, Time);
 static void mousesel(XEvent *, int);
@@ -241,7 +245,6 @@ static int frclen = 0;
 static int frccap = 0;
 static char *usedfont = NULL;
 static double usedfontsize = 0;
-static double defaultfontsize = 0;
 
 static char *opt_class = NULL;
 static char **opt_cmd  = NULL;
@@ -257,6 +260,7 @@ static uint buttons; /* bit field of pressed buttons */
 void
 clipcopy(const Arg *dummy)
 {
+	(void)dummy;
 	Atom clipboard;
 
 	free(xsel.clipboard);
@@ -272,6 +276,7 @@ clipcopy(const Arg *dummy)
 void
 clippaste(const Arg *dummy)
 {
+	(void)dummy;
 	Atom clipboard;
 
 	clipboard = XInternAtom(xw.dpy, "CLIPBOARD", 0);
@@ -282,6 +287,7 @@ clippaste(const Arg *dummy)
 void
 selpaste(const Arg *dummy)
 {
+	(void)dummy;
 	XConvertSelection(xw.dpy, XA_PRIMARY, xsel.xtarget, XA_PRIMARY,
 			xw.win, CurrentTime);
 }
@@ -289,6 +295,7 @@ selpaste(const Arg *dummy)
 void
 numlock(const Arg *dummy)
 {
+	(void)dummy;
 	win.mode ^= MODE_NUMLOCK;
 }
 
@@ -314,10 +321,11 @@ zoomabs(const Arg *arg)
 void
 zoomreset(const Arg *arg)
 {
+	(void)arg;
 	Arg larg;
 
 	if (defaultfontsize > 0) {
-		larg.f = defaultfontsize;
+		larg.f = defaultfontsize * xgetdpi();
 		zoomabs(&larg);
 	}
 }
@@ -350,7 +358,7 @@ mousesel(XEvent *e, int done)
 	int type, seltype = SEL_REGULAR;
 	uint state = e->xbutton.state & ~(Button1Mask | forcemousemod);
 
-	for (type = 1; type < LEN(selmasks); ++type) {
+	for (type = 1; type < (int)LEN(selmasks); ++type) {
 		if (match(selmasks[type], state)) {
 			seltype = type;
 			break;
@@ -613,6 +621,7 @@ xclipcopy(void)
 void
 selclear_(XEvent *e)
 {
+	(void)e;
 	selclear();
 }
 
@@ -686,6 +695,7 @@ setsel(char *str, Time t)
 	XSetSelectionOwner(xw.dpy, XA_PRIMARY, xw.win, t);
 	if (XGetSelectionOwner(xw.dpy, XA_PRIMARY) != xw.win)
 		selclear();
+	clipcopy(NULL);
 }
 
 void
@@ -805,7 +815,7 @@ xloadcols(void)
 		dc.col = xmalloc(dc.collen * sizeof(Color));
 	}
 
-	for (i = 0; i < dc.collen; i++)
+	for (i = 0; i < (int)dc.collen; i++)
 		if (!xloadcolor(i, NULL, &dc.col[i])) {
 			if (colorname[i])
 				die("could not allocate color '%s'\n", colorname[i]);
@@ -818,7 +828,7 @@ xloadcols(void)
 int
 xgetcolor(int x, unsigned char *r, unsigned char *g, unsigned char *b)
 {
-	if (!BETWEEN(x, 0, dc.collen - 1))
+	if (!BETWEEN(x, 0, (int)dc.collen - 1))
 		return 1;
 
 	*r = dc.col[x].color.red >> 8;
@@ -833,7 +843,7 @@ xsetcolorname(int x, const char *name)
 {
 	Color ncolor;
 
-	if (!BETWEEN(x, 0, dc.collen - 1))
+	if (!BETWEEN(x, 0, (int)dc.collen - 1))
 		return 1;
 
 	if (!xloadcolor(x, name, &ncolor))
@@ -980,6 +990,28 @@ xloadfont(Font *f, FcPattern *pattern)
 	return 0;
 }
 
+double xgetdpi()
+{
+	double dpi = 1.0;
+	XrmInitialize();
+	char* resourceManager = XResourceManagerString(xw.dpy);
+	if (resourceManager == NULL)
+		return dpi;
+
+	XrmDatabase db = XrmGetStringDatabase(resourceManager);
+	if (db == NULL)
+		return dpi;
+
+	XrmValue ret;
+	char* type;
+	XrmGetResource(db, "Xft.dpi", "String", &type, &ret);      \
+	if (ret.addr != NULL && !strncmp("String", type, 64)) {
+		dpi = strtod(ret.addr, NULL) / 100.0;
+	}
+	XrmDestroyDatabase(db);
+	return dpi;
+}
+
 void
 xloadfonts(const char *fontstr, double fontsize)
 {
@@ -993,7 +1025,6 @@ xloadfonts(const char *fontstr, double fontsize)
 
 	if (!pattern)
 		die("can't open font %s\n", fontstr);
-
 	if (fontsize > 1) {
 		FcPatternDel(pattern, FC_PIXEL_SIZE);
 		FcPatternDel(pattern, FC_SIZE);
@@ -1075,6 +1106,7 @@ xunloadfonts(void)
 int
 ximopen(Display *dpy)
 {
+	(void)dpy;
 	XIMCallback imdestroy = { .client_data = NULL, .callback = ximdestroy };
 	XICCallback icdestroy = { .client_data = NULL, .callback = xicdestroy };
 
@@ -1105,6 +1137,8 @@ ximopen(Display *dpy)
 void
 ximinstantiate(Display *dpy, XPointer client, XPointer call)
 {
+	(void)client;
+	(void)call;
 	if (ximopen(dpy))
 		XUnregisterIMInstantiateCallback(xw.dpy, NULL, NULL, NULL,
 		                                 ximinstantiate, NULL);
@@ -1113,6 +1147,9 @@ ximinstantiate(Display *dpy, XPointer client, XPointer call)
 void
 ximdestroy(XIM xim, XPointer client, XPointer call)
 {
+	(void)xim;
+	(void)client;
+	(void)call;
 	xw.ime.xim = NULL;
 	XRegisterIMInstantiateCallback(xw.dpy, NULL, NULL, NULL,
 	                               ximinstantiate, NULL);
@@ -1122,6 +1159,9 @@ ximdestroy(XIM xim, XPointer client, XPointer call)
 int
 xicdestroy(XIC xim, XPointer client, XPointer call)
 {
+	(void)xim;
+	(void)client;
+	(void)call;
 	xw.ime.xic = NULL;
 	return 1;
 }
@@ -1145,7 +1185,7 @@ xinit(int cols, int rows)
 		die("could not init fontconfig.\n");
 
 	usedfont = (opt_font == NULL)? font : opt_font;
-	xloadfonts(usedfont, 0);
+	xloadfonts(usedfont, defaultfontsize * xgetdpi());
 
 	/* colors */
 	xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
@@ -1710,6 +1750,7 @@ xximspot(int x, int y)
 void
 expose(XEvent *ev)
 {
+	(void)ev;
 	redraw();
 }
 
@@ -1724,6 +1765,7 @@ visibility(XEvent *ev)
 void
 unmap(XEvent *ev)
 {
+	(void)ev;
 	win.mode &= ~MODE_VISIBLE;
 }
 
@@ -1808,7 +1850,7 @@ kmap(KeySym k, uint state)
 	int i;
 
 	/* Check for mapped keys out of X11 function keys. */
-	for (i = 0; i < LEN(mappedkeys); i++) {
+	for (i = 0; i < (int)LEN(mappedkeys); i++) {
 		if (mappedkeys[i] == k)
 			break;
 	}
@@ -1905,7 +1947,7 @@ cmessage(XEvent *e)
 		} else if (e->xclient.data.l[1] == XEMBED_FOCUS_OUT) {
 			win.mode &= ~MODE_FOCUSED;
 		}
-	} else if (e->xclient.data.l[0] == xw.wmdeletewin) {
+	} else if (e->xclient.data.l[0] == (long)xw.wmdeletewin) {
 		ttyhangup();
 		exit(0);
 	}
